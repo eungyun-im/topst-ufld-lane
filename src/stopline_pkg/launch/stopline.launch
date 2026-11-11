@@ -1,0 +1,34 @@
+<launch>
+  <arg name="debug" default="false"/>
+  <node pkg="stopline_pkg" exec="stopline_node" name="stopline_node" output="screen">
+    <!-- ── 토픽 ──────────────────────────────── -->
+    <param name="debug_mode" type="bool" value="$(var debug)"/>
+    <param name="image_topic"          value="/camera/image/compressed"/>
+    <param name="mission_topic"        value="/mission_state"/>
+    <param name="stopline_flag_topic" value="/stopline_flag"/>
+
+    <!-- ── 감지 파라미터 ─────────────────────── -->
+    <param name="roi_height"       type="int"    value="80"/>
+    <param name="row_pixel_ratio"  type="float" value="0.25"/>
+    <param name="detect_row_count" type="int"    value="25"/>
+    <param name="cooldown_sec"     type="float" value="3.0"/>
+    <!-- 100Hz 기준 10카운트=0.1초 동안 true 펄스 후 false, 이후 cooldown 유지 -->
+    <param name="flag_pulse_count" type="int"    value="10"/>
+
+    <!-- ── HSV 흰색 정지선 ───────────────────── -->
+    <param name="white_h_min" type="int" value="0"/>
+    <param name="white_h_max" type="int" value="180"/>
+    <param name="white_s_min" type="int" value="0"/>
+    <param name="white_s_max" type="int" value="55"/>
+    <param name="white_v_min" type="int" value="150"/>
+    <param name="white_v_max" type="int" value="255"/>
+
+    <!-- ── HSV 노란색 정지선 ─────────────────── -->
+    <param name="yellow_h_min" type="int" value="15"/>
+    <param name="yellow_h_max" type="int" value="30"/>
+    <param name="yellow_s_min" type="int" value="70"/>
+    <param name="yellow_s_max" type="int" value="255"/>
+    <param name="yellow_v_min" type="int" value="120"/>
+    <param name="yellow_v_max" type="int" value="255"/>
+  </node>
+</launch>

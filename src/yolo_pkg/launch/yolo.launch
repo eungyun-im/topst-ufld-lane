@@ -1,0 +1,69 @@
+<launch>
+  <arg name="model_path" default="$(find-pkg-share yolo_pkg)/models/best.onnx"/>
+  <arg name="show_debug" default="false"/>
+  <arg name="publish_debug_images" default="true"/>  <!-- 뷰어 PC 원격 시각화용 디버그 영상 발행 on/off -->
+  <arg name="debug_topic_prefix" default="/yolo/debug"/>  <!-- 실제 토픽: <prefix>/detection -->
+  <arg name="debug_jpeg_quality" default="70"/>
+  <arg name="debug_image_skip" default="2"/>
+
+  <!-- Linux CPU 2,3 = main CPU cores 3,4 in the confirmed D3-G layout. -->
+  <node pkg="yolo_pkg" exec="yolo_node_ort.py" name="yolo_node"
+        output="screen" launch-prefix="taskset -c 2,3">
+
+    <!-- ── 토픽 ──────────────────────────────── -->
+    <param name="image_topic"               value="/camera/image/compressed"/>
+    <param name="traffic_light_green_topic" value="/traffic_light_green"/>
+    <param name="traffic_light_red_topic"   value="/traffic_light_red"/>
+    <param name="aruco_flag_topic"          value="/aruco_flag"/>
+
+    <!-- ── YOLO 모델 (YOLO26n ONNX Runtime CPU) ── -->
+    <!-- 320x320, classes 0=green_light, 1=red_light -->
+    <param name="model_path"     value="$(var model_path)"/>
+    <param name="conf_threshold" type="float" value="0.5"/>
+    <param name="nms_threshold"  type="float" value="0.4"/>
+    <param name="input_width"    type="int"   value="320"/>
+    <param name="input_height"   type="int"   value="320"/>
+    <param name="class_green"    type="int"   value="0"/>
+    <param name="class_red"      type="int"   value="1"/>
+
+    <!-- ── ArUco 파라미터 ────────────────────── -->
+    <!-- 0=4X4_50, 4=5X5_50, 8=6X6_50, 12=7X7_50, 16=ARUCO_ORIGINAL -->
+    <param name="aruco_dict"      type="int"   value="8"/> <!-- 6X6_50 사용중 -->
+    <!-- 감지할 마커 ID (ID=3만 유효) -->
+    <param name="target_aruco_id" type="int"   value="3"/>
+    <param name="min_marker_size" type="float" value="10.0"/>
+
+    <!-- ── ArUco 검출 강건화 (안 잡히면 여기 조정) ── -->
+    <param name="aruco_corner_refine"    type="bool"  value="true"/>
+    <param name="aruco_win_min"          type="int"   value="3"/>
+    <param name="aruco_win_max"          type="int"   value="23"/>
+    <param name="aruco_win_step"         type="int"   value="4"/>
+    <param name="aruco_thresh_constant"  type="float" value="7.0"/>
+    <param name="aruco_min_perimeter"    type="float" value="0.02"/>
+    <param name="aruco_max_perimeter"    type="float" value="4.0"/>
+    <param name="aruco_poly_accuracy"    type="float" value="0.05"/>
+    <param name="aruco_error_correction" type="float" value="0.6"/>
+    <param name="aruco_equalize"         type="bool"  value="true"/>
+
+    <!-- ── 디버그 ─────────────────────────────── -->
+    <param name="show_debug"           type="bool" value="$(var show_debug)"/>
+    <param name="publish_debug_images" type="bool" value="$(var publish_debug_images)"/>
+    <param name="debug_topic_prefix"               value="$(var debug_topic_prefix)"/>
+    <param name="debug_jpeg_quality"   type="int"  value="$(var debug_jpeg_quality)"/>
+    <param name="debug_image_skip"     type="int"  value="$(var debug_image_skip)"/>
+
+    <!-- ── 신호등 감지 ROI (원본 이미지 기준 직사각형) ── -->
+    <!-- 0,0,0,0 이면 전체 이미지 사용 -->
+    <param name="traffic_roi_x"      type="int" value="0"/>
+    <param name="traffic_roi_y"      type="int" value="0"/>
+    <param name="traffic_roi_width"  type="int" value="0"/>
+    <param name="traffic_roi_height" type="int" value="0"/>
+
+    <!-- ── 아루코 마커 감지 ROI (원본 이미지 기준 직사각형) ── -->
+    <!-- 0,0,0,0 이면 전체 이미지 사용 -->
+    <param name="aruco_roi_x"      type="int" value="0"/>
+    <param name="aruco_roi_y"      type="int" value="0"/>
+    <param name="aruco_roi_width"  type="int" value="0"/>
+    <param name="aruco_roi_height" type="int" value="0"/>
+  </node>
+</launch>

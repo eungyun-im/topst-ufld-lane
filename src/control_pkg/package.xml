@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>control_pkg</name>
+  <version>1.0.0</version>
+  <description>Control package - state management and PD steering</description>
+  <maintainer email="todo@todo.com">todo</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>control_msgs</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

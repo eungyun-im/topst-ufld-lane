@@ -1,0 +1,66 @@
+<launch>
+  <arg name="debug" default="false"/>
+  <node pkg="control_pkg" exec="control_node" name="auto_control_node" output="screen">
+
+    <!-- Topics -->
+    <param name="debug_mode" type="bool" value="$(var debug)"/>
+    <param name="metrics_log_enable" type="bool" value="true"/>
+    <param name="metrics_log_period_ms" type="int" value="500"/>
+    <param name="line_offset_topic"    value="/line_offset"/>
+    <param name="line_heading_topic"   value="/line_heading"/>
+    <param name="line_curvature_topic" value="/line_curvature"/>
+    <param name="line_valid_topic"     value="/line_valid"/>
+    <param name="control_tuning_topic" value="/control_tuning"/>
+    <param name="debug_metrics_topic"  value="/control_debug"/>
+    <param name="control_topic"        value="/control"/>
+
+    <!-- Control loop -->
+    <param name="control_hz" type="float" value="20.0"/>
+    <param name="line_timeout_sec" type="float" value="0.30"/>
+    <param name="line_invalid_streak_limit" type="int" value="3"/>
+
+    <!-- Steering geometry -->
+    <param name="max_steering_rad" type="float" value="0.45"/>
+    <param name="image_center"     type="float" value="160.0"/>
+    <param name="max_steer_step_per_cycle" type="float" value="0.05"/>
+    <param name="steering_sign"    type="float" value="-1.0"/>
+
+    <!-- Lane-follow PID (single global set; tune p -> d -> straight_p_scale -> i) -->
+    <param name="p_gain"       type="float" value="1.20"/>
+    <param name="i_gain"       type="float" value="0.02"/>
+    <param name="d_gain"       type="float" value="0.60"/>
+    <param name="heading_gain" type="float" value="20.0"/>
+    <param name="d_filter_alpha" type="float" value="0.35"/>
+    <param name="heading_term_limit_px" type="float" value="80.0"/>
+
+    <!-- Integral guards: integrate only near center, decay with leak, clamp I contribution -->
+    <param name="integral_error_limit_px" type="float" value="40.0"/>
+    <param name="integral_term_limit_px"  type="float" value="30.0"/>
+    <param name="integral_leak"           type="float" value="0.995"/>
+
+    <!-- Curvature-based straight-section P reduction.
+         Verify thresholds against /ufld_debug filtered_curvature before first run. -->
+    <param name="straight_p_scale"       type="float" value="0.70"/>
+    <param name="straight_curv_deadband" type="float" value="0.0002"/>
+    <param name="straight_curv_full"     type="float" value="0.0012"/>
+
+    <!-- Speed / throttle (offset-risk based slowdown) -->
+    <param name="max_speed" type="float" value="0.35"/>
+    <param name="min_speed" type="float" value="0.10"/>
+    <!-- Mission planner input (optional; no planner running = NORMAL) -->
+    <param name="mission_speed_mode_topic" value="/mission_speed_mode"/>
+    <param name="slow_speed_scale" type="float" value="0.70"/>
+    <param name="throttle_risk_scale" type="float" value="1.0"/>
+    <param name="throttle_offset_deadband_px" type="float" value="20.0"/>
+    <param name="throttle_offset_full_px" type="float" value="120.0"/>
+    <param name="throttle_heading_deadband_rad" type="float" value="0.08"/>
+    <param name="throttle_heading_full_rad" type="float" value="0.50"/>
+    <param name="throttle_derivative_deadband_px" type="float" value="4.0"/>
+    <param name="throttle_derivative_full_px" type="float" value="35.0"/>
+    <param name="throttle_curvature_deadband" type="float" value="0.0003"/>
+    <param name="throttle_curvature_full" type="float" value="0.0018"/>
+    <param name="throttle_decel_alpha" type="float" value="0.45"/>
+    <param name="throttle_accel_alpha" type="float" value="0.08"/>
+
+  </node>
+</launch>

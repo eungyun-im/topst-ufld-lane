@@ -1,0 +1,118 @@
+<launch>
+  <arg name="model_dir" default="$(find-pkg-share ufld_line_pkg)/models"/>
+  <arg name="use_opencl" default="true"/>
+  <arg name="show_debug" default="false"/>
+
+  <node pkg="ufld_line_pkg" exec="ufld_line_node" name="ufld_line_node" output="screen">
+    <!-- Match existing line_pkg interfaces. -->
+    <param name="image_topic" value="/camera/image/compressed"/>
+    <param name="offset_topic" value="/line_offset"/>
+    <param name="heading_topic" value="/line_heading"/>
+    <param name="curvature_topic" value="/line_curvature"/>
+    <param name="valid_topic" value="/line_valid"/>
+    <param name="tuning_topic" value="/line_tuning"/>
+    <param name="debug_metrics_topic" value="/ufld_debug"/>
+    <param name="mission_topic" value="/mission_state"/>
+    <param name="yellow_detected_topic" value="/yellow_detected"/>
+    <param name="debug_image_topic" value="/ufld/image/compressed"/>
+    <param name="line_image_bev_topic" value="/line/image/bev"/>
+    <param name="line_image_overlay_topic" value="/line/image/sliding"/>
+
+    <!-- TNN model files. Put converted files in ufld_line_pkg/models or override model_dir. -->
+    <param name="proto_path" value="$(var model_dir)/ufld_dracer_mobilenetv2_160x320.opt.tnnproto"/>
+    <param name="model_path" value="$(var model_dir)/ufld_dracer_mobilenetv2_160x320.opt.tnnmodel"/>
+    <param name="input_name" value="input"/>
+    <param name="output_name" value="output"/>
+
+    <!-- Camera/model size. -->
+    <param name="input_width" type="int" value="320"/>
+    <param name="input_height" type="int" value="160"/>
+
+    <!-- UFLD v1 head shape & tuning parameters. -->
+    <param name="num_lanes" type="int" value="4"/>
+    <param name="griding_num" type="int" value="100"/>
+    <param name="cls_num_per_lane" type="int" value="36"/>
+    <param name="near_band" type="float" value="0.74"/>
+    <param name="offset_band_ratio" type="float" value="0.22"/>
+    <param name="offset_max_step_px" type="float" value="30.0"/>
+    <param name="half_lane_width" type="float" value="85.0"/> <!-- BEV dst width 170px / 2 -->
+
+    <param name="min_lane_points" type="int" value="4"/>
+    <param name="min_vertical_span_ratio" type="float" value="0.08"/>
+    <param name="heading_min_vertical_span_ratio" type="float" value="0.18"/>
+    <param name="heading_max_abs" type="float" value="0.50"/>
+    <param name="dedupe_max_dx_px" type="float" value="28.0"/>
+    <param name="dedupe_min_overlap" type="float" value="0.45"/>
+    <param name="curvature_min_points" type="int" value="6"/>
+    <param name="curvature_max_abs" type="float" value="0.02"/>
+
+    <param name="use_opencl" type="bool" value="$(var use_opencl)"/>
+    <param name="cpu_threads" type="int" value="4"/>
+    <param name="offset_filter_alpha" type="float" value="0.40"/> <!-- was 0.25; less lag now that actuator hold delay is gone -->
+
+    <param name="dynamic_ld_enabled" type="bool" value="true"/>
+    <param name="dynamic_ld_heading_start" type="float" value="1.20"/>
+    <param name="dynamic_ld_heading_full" type="float" value="2.00"/>
+    <param name="dynamic_ld_y_add" type="float" value="0.04"/>
+    <param name="heading_filter_alpha" type="float" value="0.30"/> <!-- was 0.12 -->
+
+    <param name="curvature_filter_alpha" type="float" value="0.25"/>
+    <param name="publish_zero_on_fail" type="bool" value="false"/>
+    <param name="publish_debug_image" type="bool" value="true"/>
+    <param name="use_bev_offset" type="bool" value="true"/>
+    <param name="publish_bev_debug_image" type="bool" value="true"/>
+    <param name="bev_debug_quality" type="int" value="80"/>
+    <param name="show_debug" type="bool" value="$(var show_debug)"/>
+    <param name="log_period_sec" type="float" value="1.0"/>
+
+    <!-- BEV is applied after UFLD detection, not to the model input. -->
+    <param name="bev_src_bl_x" type="float" value="0.0"/>
+    <param name="bev_src_bl_y" type="float" value="118.0"/>
+    <param name="bev_src_br_x" type="float" value="320.0"/>
+    <param name="bev_src_br_y" type="float" value="118.0"/>
+    <param name="bev_src_tl_x" type="float" value="90.0"/>
+    <param name="bev_src_tl_y" type="float" value="80.0"/>
+    <param name="bev_src_tr_x" type="float" value="230.0"/>
+    <param name="bev_src_tr_y" type="float" value="80.0"/>
+    <param name="bev_dst_bl_x" type="float" value="75.0"/>
+    <param name="bev_dst_bl_y" type="float" value="120.0"/>
+    <param name="bev_dst_br_x" type="float" value="245.0"/>
+    <param name="bev_dst_br_y" type="float" value="120.0"/>
+    <param name="bev_dst_tl_x" type="float" value="75.0"/>
+    <param name="bev_dst_tl_y" type="float" value="0.0"/>
+    <param name="bev_dst_tr_x" type="float" value="245.0"/>
+    <param name="bev_dst_tr_y" type="float" value="0.0"/>
+
+    <!-- Yellow X-cross detector from UFLD geometry: fires when the BEV
+         separation between yellow_left and yellow_right collapses below
+         yellow_cross_width_px (normal lane ~170px). Verify on track with:
+         ros2 topic echo /yellow_cross_detected -->
+    <param name="yellow_cross_topic"    value="/yellow_cross_detected"/>
+    <param name="yellow_cross_width_px" type="float" value="60.0"/>
+    <param name="yellow_cross_y_tol_px" type="float" value="12.0"/>
+    <param name="yellow_cross_stable_ticks" type="int" value="2"/>
+
+    <!-- Warning zone: red-painted road between the active lanes, checked in
+         BEV between the lane bounds. mission_planner debounces the flag and
+         drops speed to SLOW (control slow_speed_scale = 0.70) while inside.
+         Verify on track with: ros2 topic echo /warning_zone_detected -->
+    <param name="warning_zone_enable" type="bool" value="true"/>
+    <param name="warning_zone_topic" value="/warning_zone_detected"/>
+    <!-- HSV red: [0..h1_max] + [h2_min..180], S>=s_min, V>=v_min -->
+    <param name="warning_red_h1_max" type="int" value="10"/>
+    <param name="warning_red_h2_min" type="int" value="170"/>
+    <param name="warning_red_s_min"  type="int" value="120"/>
+    <param name="warning_red_v_min"  type="int" value="70"/>
+    <param name="warning_red_ratio_thresh" type="float" value="0.35"/>
+    <param name="warning_inset_px" type="float" value="12.0"/>
+
+    <!-- Keep yellow-detected behavior compatible with line_pkg. -->
+    <param name="yellow_detect_thresh" type="int" value="99999"/>
+    <param name="yellow_h_min" type="int" value="15"/>
+    <param name="yellow_h_max" type="int" value="30"/>
+    <param name="yellow_s_min" type="int" value="70"/>
+    <param name="yellow_s_max" type="int" value="255"/>
+    <param name="yellow_v_min" type="int" value="120"/>
+    <param name="yellow_v_max" type="int" value="255"/>
+  </node>
+</launch>

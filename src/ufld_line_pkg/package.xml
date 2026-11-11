@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>ufld_line_pkg</name>
+  <version>0.1.0</version>
+  <description>UFLD lane offset node for D-Racer-Kit with optional TNN OpenCL inference.</description>
+  <maintainer email="todo@todo.com">todo</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>libopencv-dev</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

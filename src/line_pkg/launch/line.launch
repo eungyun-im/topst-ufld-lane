@@ -1,0 +1,86 @@
+<launch>
+  <node pkg="line_pkg" exec="line_node" name="line_node" output="screen">
+
+    <!-- Topics -->
+    <param name="image_topic"           value="/camera/image/compressed"/>
+    <param name="offset_topic"          value="/line_offset"/>
+    <param name="mission_topic"         value="/mission_state"/>
+    <param name="yellow_detected_topic" value="/yellow_detected"/>
+    <param name="line_image_bev_topic" value="/line/image/bev"/>
+    <param name="line_image_sliding_topic" value="/line/image/sliding"/>
+    <param name="show_debug"            type="bool" value="false"/>
+    <param name="debug_mode"            type="bool" value="true"/>
+    <param name="debug_scale"           type="float" value="1.0"/>
+    <param name="publish_debug_images"  type="bool" value="true"/>
+    <param name="debug_image_quality"   type="int" value="80"/>
+
+    <!-- BEV Transform Coordinates -->
+    <param name="bev_src_bl_x" type="float" value="0.0"/>
+    <param name="bev_src_bl_y" type="float" value="118.0"/>
+    <param name="bev_src_br_x" type="float" value="320.0"/>
+    <param name="bev_src_br_y" type="float" value="118.0"/>
+    <param name="bev_src_tl_x" type="float" value="90.0"/>
+    <param name="bev_src_tl_y" type="float" value="80.0"/>
+    <param name="bev_src_tr_x" type="float" value="230.0"/>
+    <param name="bev_src_tr_y" type="float" value="80.0"/>
+
+    <param name="bev_dst_bl_x" type="float" value="75.0"/>
+    <param name="bev_dst_bl_y" type="float" value="120.0"/>
+    <param name="bev_dst_br_x" type="float" value="245.0"/>
+    <param name="bev_dst_br_y" type="float" value="120.0"/>
+    <param name="bev_dst_tl_x" type="float" value="75.0"/>
+    <param name="bev_dst_tl_y" type="float" value="0.0"/>
+    <param name="bev_dst_tr_x" type="float" value="245.0"/>
+    <param name="bev_dst_tr_y" type="float" value="0.0"/>
+
+    <!-- Sliding Window Parameters -->
+    <param name="n_windows"           type="int"    value="7"/>
+    <param name="win_half_width"      type="int"    value="25"/>
+    <param name="min_pix"             type="int"    value="70"/>
+    <param name="bottom_lane_windows" type="int"    value="1"/>
+    <param name="left_search_start"   type="float" value="0.0"/>
+    <param name="left_search_end"     type="float" value="0.35"/>
+    <param name="right_search_start"  type="float" value="0.65"/>
+    <param name="right_search_end"    type="float" value="1.0"/>
+    <param name="offset_height_ratio" type="float" value="0.7"/>
+
+    <!-- Color Detection Threshold (for Control Node boolean) -->
+    <param name="yellow_detect_thresh" type="int" value="99999"/>
+
+    <!-- Yellow detection ROI -->
+    <param name="yellow_roi_x"      type="int" value="0"/>
+    <param name="yellow_roi_y"      type="int" value="0"/>
+    <param name="yellow_roi_width"  type="int" value="0"/>
+    <param name="yellow_roi_height" type="int" value="0"/>
+
+    <!-- HSV White Lane -->
+    <param name="white_h_min" type="int" value="0"/>
+    <param name="white_h_max" type="int" value="180"/>
+    <param name="white_s_min" type="int" value="0"/>
+    <param name="white_s_max" type="int" value="55"/>
+    <param name="white_v_min" type="int" value="150"/>
+    <param name="white_v_max" type="int" value="255"/>
+
+    <!-- HSV Yellow Lane -->
+    <param name="yellow_h_min" type="int" value="15"/>
+    <param name="yellow_h_max" type="int" value="30"/>
+    <param name="yellow_s_min" type="int" value="70"/>
+    <param name="yellow_s_max" type="int" value="255"/>
+    <param name="yellow_v_min" type="int" value="120"/>
+    <param name="yellow_v_max" type="int" value="255"/>
+
+    <!-- UFLD Parameters -->
+    <param name="ufld_enabled"          type="bool"   value="true"/>
+    <param name="ufld_use_gpu"           type="bool"   value="true"/>
+    <param name="ufld_cls_num_per_lane"  type="int"    value="36"/>
+    <param name="ufld_proto_path"        value="/home/topst/ufld_deploy/models/ufld_dracer_160x320_fp16.opt.tnnproto"/>
+    <param name="ufld_model_path"        value="/home/topst/ufld_deploy/models/ufld_dracer_160x320_fp16.opt.tnnmodel"/>
+    <param name="ufld_direct_offset_enabled" type="bool"  value="true"/>
+    <param name="ufld_offset_y_ratio"         type="float" value="0.78"/>
+    <param name="ufld_offset_band_ratio"      type="float" value="0.12"/>
+    <param name="ufld_expected_lane_width_px" type="float" value="170.0"/>
+    <param name="ufld_offset_filter_alpha"    type="float" value="0.35"/>
+    <param name="ufld_offset_max_step_px"     type="float" value="35.0"/>
+
+  </node>
+</launch>
